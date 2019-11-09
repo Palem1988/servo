@@ -135,7 +135,9 @@ linux_build_env = {
     "CC": "clang",
     "CXX": "clang++",
 }
-macos_build_env = {}
+macos_build_env = {
+    "PKG_CONFIG_PATH": "homebrew/lib/pkgconfig",
+}
 windows_build_env = {
     "x86_64": {
         "GSTREAMER_1_0_ROOT_X86_64": "%HOMEDRIVE%%HOMEPATH%\\gst\\gstreamer\\1.0\\x86_64\\",
@@ -595,7 +597,6 @@ def update_wpt():
         .with_repo(shallow=False)
         .with_curl_artifact_script(build_task, "target.tar.gz")
         .with_script("""
-            export PKG_CONFIG_PATH="$(brew --prefix libffi)/lib/pkgconfig/"
             tar -xzf target.tar.gz
             ./etc/ci/update-wpt-checkout fetch-and-update-expectations
             ./etc/ci/update-wpt-checkout open-pr
@@ -626,7 +627,11 @@ def macos_release_build(args=""):
 def macos_wpt():
     build_task = macos_release_build("--with-debug-assertions")
     def macos_run_task(name):
-        task = macos_task(name).with_python2()
+        task = (
+            macos_task(name)
+            .with_python2()
+            .with_env(PKG_CONFIG_PATH="homebrew/lib/pkgconfig")
+        )
         return with_homebrew(task, ["etc/taskcluster/macos/Brewfile-gstreamer"])
     wpt_chunks("macOS x64", macos_run_task, build_task, repo_dir="repo",
                total_chunks=6, processes=4)
@@ -769,7 +774,7 @@ def macos_task(name):
     return (
         decisionlib.MacOsGenericWorkerTask(name)
         .with_provisioner_id("proj-servo")
-        .with_worker_type("macos")
+        .with_worker_type("macos-disabled-mac9")
         .with_treeherder_required()
     )
 
@@ -914,7 +919,6 @@ def macos_build_task(name):
         .with_script("""
             export OPENSSL_INCLUDE_DIR="$(brew --prefix openssl)/include"
             export OPENSSL_LIB_DIR="$(brew --prefix openssl)/lib"
-            export PKG_CONFIG_PATH="$(brew --prefix libffi)/lib/pkgconfig/"
         """)
 
         .with_directory_mount(
