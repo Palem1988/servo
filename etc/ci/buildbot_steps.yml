@@ -2,7 +2,7 @@ env:
   RUST_BACKTRACE: '1'
   RUSTFLAGS: -Dwarnings
   CARGO_INCREMENTAL: "0"
-  SCCACHE_IDLE_TIMEOUT: "1200"
+  SCCACHE_IDLE_TIMEOUT: "0"
   GST_DEBUG: '3'
 
 linux-rel-nogate:

@@ -50,6 +50,7 @@ def main(task_for):
             "try": all_tests,
             "try-taskcluster": [
                 # Add functions here as needed, in your push to that branch
+                with_rust_nightly
             ],
             "master": [
                 upload_docs,
@@ -131,9 +132,11 @@ linux_build_env = {
     "SHELL": "/bin/dash",  # For SpiderMonkey’s build system
     "CCACHE": "sccache",
     "RUSTC_WRAPPER": "sccache",
-    "SCCACHE_IDLE_TIMEOUT": "1200",
     "CC": "clang",
     "CXX": "clang++",
+    "SCCACHE_IDLE_TIMEOUT": "1200",
+    # https://github.com/servo/servo/issues/24714#issuecomment-552951519
+    "SCCACHE_MAX_FRAME_LENGTH": str(100 * 1024 * 1024),  # 100 MB
 }
 macos_build_env = {}
 windows_build_env = {
@@ -290,6 +293,7 @@ def with_rust_nightly():
     return (
         linux_build_task("with Rust Nightly", build_env=modified_build_env, install_rustc_dev=False)
         .with_treeherder("Linux x64", "RustNightly")
+        .with_env(SCCACHE_ERROR_LOG="/sccache.log")
         .with_script("""
             echo "nightly" > rust-toolchain
             rustup component add rustc-dev
